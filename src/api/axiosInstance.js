@@ -3,7 +3,8 @@ import axios from "axios";
 
 // 1. Create a base Axios instance
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/v1", // Your backend API base URl
+  
+  baseURL: import.meta.env.VITE_API_URL, // Your backend API base URl
   withCredentials: true,
 });
 
