@@ -43,7 +43,7 @@ export default function SignupPage() {
 
       console.log('User registered:', registerResponse.data.data);
 
-      logout();
+      // logout();
       const { username, password } = formData;
       const success = await login({ username, password });
 
