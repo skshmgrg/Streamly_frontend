@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://api.streamlyshare.online/$1"
+      "destination": "https://api.streamlyshare.online/api/$1"
     }
   ]
 }
