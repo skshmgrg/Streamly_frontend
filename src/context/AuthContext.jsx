@@ -1,5 +1,4 @@
-// src/context/AuthContext.jsx
-//this is the file where we make the context , like we did messagecontext in a separate file in our prev project
+
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance'; 
@@ -123,7 +122,11 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={authContextValue}>
       {!loading && children} 
-      {loading && <div>Loading authentication...</div>}
+      {loading && (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+)}
     </AuthContext.Provider>
   );
 };
