@@ -29,7 +29,7 @@ export default function Header() {
     e.preventDefault();
     const q = searchInput.trim();
     if (!q) return;
-    navigate(`/?query=${encodeURIComponent(q)}`);
+    navigate(`/?query=${encodeURIComponent(q)}`);// trimming the search query and passing it in the url as a query
     setSearchInput("");
     setIsSearchMobileOpen(false);
   };

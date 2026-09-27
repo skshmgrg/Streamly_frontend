@@ -45,7 +45,7 @@ function VideoCard({ video }) {
   const placeholderAvatar = `https://placehold.co/40x40/000000/FFFFFF?text=AV`;
 
   return (
-    <Link to={`/watch/${video._id}`} onClick={() => handleVideoClick(video)} className="block w-full rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105">
+    <Link to={`/watch/${video._id}`} className="block w-full rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105">
       <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
         {/* Video Thumbnail */}
         <div className="relative w-full aspect-video">

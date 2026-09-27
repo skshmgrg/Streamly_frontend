@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import Hls from 'hls.js';
 
 export default function VideoPlayerPage() {
   const { videoId } = useParams();
@@ -19,6 +20,23 @@ export default function VideoPlayerPage() {
   const [commentText, setCommentText] = useState('');
   const videoRef = useRef(null);
   const [showComments, setShowComments] = useState(false);
+
+  useEffect(() => {
+    const media = videoRef.current;
+    const playlistUrl = video?.masterPlaylistUrl;
+    if (!media || !playlistUrl) return undefined;
+
+    if (media.canPlayType('application/vnd.apple.mpegurl')) {
+      media.src = playlistUrl;
+      return undefined;
+    }
+
+    if (!Hls.isSupported()) return undefined;
+    const hls = new Hls();
+    hls.loadSource(playlistUrl);
+    hls.attachMedia(media);
+    return () => hls.destroy();
+  }, [video?.masterPlaylistUrl]);
 
 
   const fetchComments = async (pageNum = 1) => {
@@ -45,12 +63,29 @@ export default function VideoPlayerPage() {
 
   useEffect(() => {
     setVideo(null);
-    axiosInstance.get(`/videos/${videoId}`)
+    let pollingInterval;
+
+    const fetchVideo = () => axiosInstance.get(`/videos/${videoId}`)
       .then(res => {
-        setVideo(res.data.data);
-        fetchSubscription(res.data.data.owner._id);
+        const nextVideo = res.data?.data;
+        setVideo(nextVideo);
+        if (nextVideo?.owner?._id) {
+          fetchSubscription(nextVideo.owner._id);
+        }
+        return nextVideo;
       })
       .catch(err => console.error('Error fetching video:', err));
+
+    fetchVideo().then(nextVideo => {
+      if (nextVideo?.status === 'processing') {
+        pollingInterval = setInterval(async () => {
+          const updatedVideo = await fetchVideo();
+          if (updatedVideo?.status !== 'processing') {
+            clearInterval(pollingInterval);
+          }
+        }, 2000);
+      }
+    });
 
     fetchComments(1);
     axiosInstance.get('/videos')
@@ -61,6 +96,12 @@ export default function VideoPlayerPage() {
       .catch(err => console.error('Error fetching related videos:', err));
 
     fetchLikes();
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   }, [videoId]);
 
 
@@ -115,19 +156,28 @@ const handleSubscribe = async () => {
 
   if (!video) return <div>Loading...</div>;
 
+  const isVideoReady = video.masterPlaylistUrl && video.status === 'ready';
+
   return (
   <div className="flex flex-col lg:flex-row p-4 space-y-6 lg:space-y-0 lg:space-x-8" key={videoId}>
     <div className="flex-1">
-      <div className="w-full aspect-video bg-black">
-        <video
-          ref={videoRef}
-          key={videoId}
-          src={video.videoFile}
-          controls
-          autoPlay
-          muted
-          className="w-full h-full object-cover"
-        />
+      <div className="relative w-full aspect-video bg-black">
+        {isVideoReady ? (
+          <video
+            ref={videoRef}
+            key={videoId}
+            controls
+            autoPlay
+            muted
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-black text-white">
+            {video.status === 'failed'
+              ? 'Video processing failed. Please upload it again.'
+              : 'Video is still processing...'}
+          </div>
+        )}
       </div>
 
       <h1 className="mt-4 text-2xl font-semibold text-white">{video.title}</h1>
@@ -138,12 +188,12 @@ const handleSubscribe = async () => {
 
       <div className="mt-6 flex items-center space-x-4">
         <img
-          src={video.owner.avatar}
-          alt={video.owner.channelName}
-          className="w-12 h-12 rounded-full"
+          src={video.owner?.avatar}
+          alt={video.owner?.fullName || video.owner?.username || 'Channel'}
+          className="w-12 h-12 rounded-full object-cover"
         />
         <div>
-          <p className="text-white font-semibold">{video.owner.channelName}</p>
+          <p className="text-white font-semibold">{video.owner?.fullName || video.owner?.username || 'Unknown Channel'}</p>
           <p className="text-gray-400 text-sm">{subscriberCount} subscribers</p>
         </div>
         <button

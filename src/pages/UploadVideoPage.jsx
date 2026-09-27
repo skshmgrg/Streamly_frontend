@@ -13,6 +13,7 @@ export default function VideoUploadPage() {
   const [thumbnail, setThumbnail] = useState(null);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState(''); // 'uploading' | 'processing' | 'done' | 'failed'
 
   const handleFileChange = (e) => {
   const selected = e.target.files[0];
@@ -54,6 +55,27 @@ export default function VideoUploadPage() {
     setThumbnail(selected);
   };
 
+  const pollVideoStatus = (videoId) => {
+    return new Promise((resolve) => {
+      const interval = setInterval(async () => {
+        try {
+          const res = await axiosInstance.get(`/videos/${videoId}`);
+          const status = res.data?.data?.status;
+          if (status === 'ready') {
+            clearInterval(interval);
+            resolve('ready');
+          } else if (status === 'failed') {
+            clearInterval(interval);
+            resolve('failed');
+          }
+          // else keep polling
+        } catch {
+          // keep polling even on transient errors
+        }
+      }, 3000);
+    });
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     if (!file) {
@@ -74,15 +96,35 @@ export default function VideoUploadPage() {
 
     try {
       setUploading(true);
+      setProcessingStatus('uploading');
       const res = await axiosInstance.post('/videos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      navigate(`/watch/${res.data.data._id}`);
+      const videoId = res.data?.data?.videoId;
+      if (!videoId) {
+        throw new Error('Video processing ID was not returned');
+      }
+
+      setProcessingStatus('processing');
+      const finalStatus = await pollVideoStatus(videoId);
+
+      if (finalStatus === 'failed') {
+        setProcessingStatus('failed');
+        setError('Video processing failed on the server. Please try uploading again.');
+        setUploading(false);
+        return;
+      }
+
+      setProcessingStatus('done');
+      navigate(`/watch/${videoId}`);
     } catch (err) {
       console.error('Upload error:', err);
       setError('Failed to upload. Please try again.');
+      setProcessingStatus('');
     } finally {
-      setUploading(false);
+      if (processingStatus !== 'processing') {
+        setUploading(false);
+      }
     }
   };
 
@@ -131,10 +173,18 @@ export default function VideoUploadPage() {
         <button
           type="submit"
           disabled={uploading}
-          className={`w-full py-2 mt-4 bg-blue-600 rounded text-white ${uploading ? 'opacity-50' : ''}`}
+          className={`w-full py-2 mt-4 bg-blue-600 rounded text-white ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {uploading ? 'Uploading...' : 'Upload Video'}
+          {processingStatus === 'uploading' && 'Uploading...'}
+          {processingStatus === 'processing' && 'Processing video...'}
+          {processingStatus === 'done' && 'Almost done!'}
+          {!processingStatus && 'Upload Video'}
         </button>
+        {processingStatus === 'processing' && (
+          <p className="mt-3 text-yellow-400 text-sm text-center animate-pulse">
+            ⏳ Your video is being processed. Please wait, this may take a minute...
+          </p>
+        )}
       </form>
     </div>
   );

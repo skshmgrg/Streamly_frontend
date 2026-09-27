@@ -21,9 +21,9 @@ export default function SignupPage() {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));//first spreading the prev state (creating a shallow copy of the previous state) and then overwriting/adding a key value pair whose key is the value of the variable name and the value is the file or the text value of the input.
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));//first spreading the prev state (creating a shallow copy of the previous state) and then overwriting/adding a key value pair whose key is the value of the variable name and the value is the file or the text value of the input.
     }
   };
 
@@ -31,7 +31,8 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
 
-    const data = new FormData();
+    const data = new FormData();//creates a special browser-provided object that can hold key–value pairs, including binary files (like images).
+    // Object.entries(formData) converts the state object into an array of [key, value] pairs.
     Object.entries(formData).forEach(([key, val]) => {
       if (val) data.append(key, val);
     });

@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance'; 
 
@@ -13,13 +12,13 @@ export const useAuth = () => {
 };
 
 
-//the App component will be consisting of children here
+// AuthProvider wraps the app and provides authentication data globally via React Context.
 
 export const AuthProvider = ({ children }) => {
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);//states we want to be globally accessible
+  const [user, setUser] = useState(null);//states we want to be globally accessible
+  const [loading, setLoading] = useState(true);//states we want to be globally accessible
 
  const checkAuth = async () => {
     setLoading(true); 
@@ -27,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     
       const response = await axiosInstance.get('/users/current-user');
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data?.data) {
         
         setIsLoggedIn(true);
         setUser(response.data.data);
@@ -70,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axiosInstance.post('/users/login', credentials);
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data?.data?.user) {
         const userData = response.data.data.user;
 
         setIsLoggedIn(true);
@@ -78,6 +77,10 @@ export const AuthProvider = ({ children }) => {
         console.log("Login successful! Cookies should be set.");
         return true; 
       }
+
+      setIsLoggedIn(false);
+      setUser(null);
+      return false;
     } catch (error) {
       console.error("Login failed:", error);
       if (error.response) {

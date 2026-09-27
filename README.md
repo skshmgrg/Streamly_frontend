@@ -1,5 +1,5 @@
 # React + Vite
-
+[![Frontend CI](https://github.com/skshmgrg/Streamly_frontend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/skshmgrg/Streamly_frontend/actions/workflows/ci.yml)
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
